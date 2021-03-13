@@ -14,6 +14,7 @@ export class AppComponent {
   allImg = [];
   prueba: string;
   loading = false;
+  reader = new FileReader();
 
   modules = {
     toolbar: [
@@ -64,21 +65,13 @@ export class AppComponent {
       input.click();
 
       input.onchange = () => {
-        let file = input.files[0];
-        console.log(file.name);
+        this.file = input.files[0];
+        console.log(this.file.name);
         const range = editor.getSelection();
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => {
-          editor.insertEmbed(range.index, 'image', reader.result);
+        this.reader.readAsDataURL(this.file);
+        this.reader.onload = () => {
+          editor.insertEmbed(range.index, 'image', this.reader.result);
         };
-
-        if (/^image\//.test(file.type)) {
-          this.file = file;
-          file = null;
-        } else {
-          console.warn('Solo puedes cargar imagenes');
-        }
       };
 
     });
@@ -86,15 +79,22 @@ export class AppComponent {
 
   onSubmit() {
     if (this.file != null) {
-    this.loading = true;
+      this.loading = true
+      this.reader = null;
+      if (/^image\//.test(this.file.type)) {
+        let formData = new FormData();
+        formData.append('pathName', 'forage');
+        formData.append('file', this.file);
+        this.http.post('http://localhost:3000/file', formData)
+          .subscribe(event => {
+            this.file = null;
+            console.log(event['path']);
+          });
+      } else {
+        console.warn('Solo puedes cargar imagenes');
+      }
 
-      let formData = new FormData();
-      formData.append('pathName', 'forage');
-      formData.append('file', this.file);
-      this.http.post('http://localhost:3000/file', formData)
-        .subscribe(event => {
-          console.log(event['path']);
-        });
+
     }
   }
 
